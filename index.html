@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<!-- DRAJ arvostelukortti © 2026 ICT- ja karttapalvelut Peltonen. Kaikki oikeudet pidätetään. -->
+<meta name="author" content="ICT- ja karttapalvelut Peltonen">
+<meta name="copyright" content="© 2026 ICT- ja karttapalvelut Peltonen">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#173a3f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DRAJ-kortti">
+<title>DRAJ arvostelukortti</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#f3f1ea; --card:#fffdf8; --ink:#1d241f; --muted:#5f6b62; --line:#ddd8c9;
+  --pine:#173a3f; --pine2:#2a6f75; --moss:#5ea3a0; --amber:#c9822b; --rust:#a4452c;
+  --ok:#2f7a4a; --r:12px; --pad:14px;
+  font-family: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#121714;--card:#1b221d;--ink:#e9ece6;--muted:#9aa79d;--line:#2d382f;--pine:#0f272a;--pine2:#3a8a90;--moss:#6fb8b4;}
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+header{position:sticky;top:0;z-index:10;background:var(--pine);color:#f2efe4;
+  padding:calc(10px + env(safe-area-inset-top)) var(--pad) 10px;display:flex;align-items:center;gap:10px}
+header h1{font-size:17px;margin:0;font-weight:650;letter-spacing:.2px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header .total{font-variant-numeric:tabular-nums;font-weight:700;font-size:20px}
+header .prize{font-size:12px;background:var(--amber);color:#1d1408;border-radius:999px;padding:2px 8px;font-weight:700}
+header button{background:transparent;border:1px solid #ffffff44;color:inherit;border-radius:8px;padding:6px 10px;font-size:14px}
+main{max-width:760px;margin:0 auto;padding:var(--pad)}
+nav.tabs{position:fixed;bottom:0;left:0;right:0;z-index:10;background:var(--card);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs button{background:none;border:0;padding:10px 4px 12px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px}
+nav.tabs button svg{width:22px;height:22px}
+nav.tabs button.on{color:var(--pine2);font-weight:700}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:var(--pad);margin-bottom:12px}
+.card h2{font-size:16px;margin:0 0 10px;display:flex;align-items:baseline;gap:8px}
+.card h2 .k{font-size:12px;color:var(--muted);font-weight:500}
+.card h2 .w{margin-left:auto;font-variant-numeric:tabular-nums}
+h3{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:18px 0 8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid.three{grid-template-columns:1fr 1fr 1fr}
+@media (max-width:420px){.grid.three{grid-template-columns:1fr 1fr}}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+input,select,textarea{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--moss);outline-offset:-1px}
+input::placeholder{color:var(--muted);opacity:.85}
+textarea{min-height:80px;resize:vertical}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);margin:6px 0}
+.chk input{width:20px;height:20px;accent-color:var(--pine2)}
+.btn{font:inherit;font-size:15px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px}
+.btn.pri{background:var(--pine2);border-color:var(--pine2);color:#fff}
+.btn.sm{padding:6px 10px;font-size:13px}
+.btn.ghost{background:none}
+.btn.danger{color:var(--rust)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pts{display:grid;grid-template-columns:repeat(11,1fr);gap:3px;margin-top:10px}
+.pts button{font-size:12px!important;padding:9px 0!important}
+.pts .jl{grid-column:1/-1;font-size:12px;color:var(--muted);margin-bottom:-2px}
+.pts button{font:inherit;font-size:14px;padding:9px 0;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-variant-numeric:tabular-nums}
+.pts button.sugg{border-color:var(--moss);border-width:2px}
+.pts button.on{background:var(--pine2);color:#fff;border-color:var(--pine2)}
+.pts button:disabled{opacity:.3}
+.sugg-line{font-size:13px;color:var(--muted);margin-top:8px;min-height:18px}
+.sugg-line b{color:var(--ink)}
+.warn{color:var(--rust);font-size:13px;margin-top:4px}
+.manual{font-size:11px;background:var(--amber);color:#1d1408;border-radius:4px;padding:1px 5px;margin-left:6px}
+details{margin-top:10px;font-size:13px;color:var(--muted)}
+details summary{cursor:pointer;color:var(--pine2)}
+@media (prefers-color-scheme:dark){details summary{color:var(--moss)}}
+table{border-collapse:collapse;width:100%;font-size:13px}
+td,th{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.sub{border:1px dashed var(--line);border-radius:10px;padding:10px;margin-bottom:8px}
+.sub .hd{display:flex;align-items:center;font-size:13px;font-weight:600;margin-bottom:8px}
+.sub .hd .x{margin-left:auto}
+/* ajanotto */
+.evbtns{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.evbtns button{font:inherit;font-size:15px;font-weight:600;padding:14px 8px;border-radius:12px;border:0;color:#fff;background:var(--pine2);text-align:left;display:flex;align-items:center;gap:8px}
+.evbtns button .dot{width:10px;height:10px;border-radius:50%;background:#fff;opacity:.8;flex:none}
+.evbtns .c-ajo{background:#2f7a4a}.evbtns .c-jatkuu{background:#4f8a7a}.evbtns .c-hukka{background:#6b6f68}.evbtns .c-yojalki{background:#7a6a2a}.evbtns .c-nahty{background:#c9822b;color:#1d1408}.evbtns .c-eraloppu{background:#5a3a2a}
+.evbtns .c-irti{background:#2f5640}.evbtns .c-kytk{background:#47567a}.evbtns .c-era{background:#1d241f}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.stat .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.live{display:flex;align-items:center;gap:8px;background:#2f7a4a;color:#fff;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-weight:600}
+.live.sh{background:#4f8a7a}
+.live .pulse{width:10px;height:10px;border-radius:50%;background:#fff;animation:p 1.2s infinite}
+@keyframes p{50%{opacity:.25}}
+.evlist .ev{display:grid;grid-template-columns:74px 1fr auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.evlist .ev .tbtn{font:inherit;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;padding:8px 4px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+.tsheet .tt{font-size:40px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;margin:2px 0 10px}
+.tsheet .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:6px}
+.tsheet .steps button{font:inherit;font-size:15px;padding:10px 0;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-variant-numeric:tabular-nums}
+.tsheet .acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.tsheet .acts .btn{width:100%}
+.evlist .ev .t{font-size:14px;font-weight:600}
+.evlist .ev .nt{font-size:12px;color:var(--muted)}
+.tag{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
+.list .item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.list .item .m{flex:1;min-width:0}
+.list .item .m b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list .item .m span{font-size:12px;color:var(--muted)}
+.big{font-size:44px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.prizebox{display:flex;align-items:center;gap:16px}
+.prizebox .pz{display:inline-block;font-size:15px;font-weight:700;padding:6px 12px;border-radius:999px;background:var(--amber);color:#1d1408}
+.prizebox .pz.none{background:var(--line);color:var(--muted)}
+.muted{color:var(--muted);font-size:13px}
+.hidden{display:none!important}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:14px;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.modal{position:fixed;inset:0;background:#0008;z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.modal .sheet{background:var(--card);width:100%;max-width:760px;max-height:85vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+.speed{display:block;padding:9px 10px;border:1px dashed var(--line);border-radius:8px;font-size:16px;font-variant-numeric:tabular-nums;min-height:42px;color:var(--muted)}
+.speed.has{color:var(--ink)}
+.speed.ok{color:var(--ok);font-weight:700}
+#printsheet{display:none}
+@media print{
+  header,nav.tabs,main,.toast{display:none!important}
+  #printsheet{display:block;color:#000;font-size:12px;padding:0}
+  #printsheet table{font-size:12px}
+  #printsheet h1{font-size:18px;margin:0 0 6px}
+  body{background:#fff;padding:0}
+}
+</style>
+</head>
+<body>
+<header>
+  <button id="btnList" aria-label="Kokeet">☰</button>
+  <h1 id="hdrTitle">DRAJ arvostelukortti</h1>
+  <span class="prize hidden" id="hdrPrize"></span>
+  <span class="total" id="hdrTotal">0</span>
+</header>
+
+<main>
+  <!-- PERUSTIEDOT -->
+  <section id="tab-info">
+    <div class="card">
+      <h2>Koe</h2>
+      <div class="grid">
+        <div><label>Päivämäärä</label><input type="date" data-f="info.pvm"></div>
+        <div><label>Koepaikka</label><input data-f="info.paikka"></div>
+        <div><label>Järjestäjä</label><input data-f="info.jarjestaja"></div>
+        <div><label>Koemaasto / alue</label><input data-f="info.maasto"></div>
+        <div><label>Ylituomari</label><input data-f="info.ylituomari"></div>
+        <div><label>Palkintotuomari(t)</label><input data-f="info.tuomari"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Koira</h2>
+      <div class="grid">
+        <div style="grid-column:1/-1"><label>Nimi</label><input data-f="info.koira"></div>
+        <div><label>Rekisterinumero</label><input data-f="info.reknro"></div>
+        <div><label>Rotu</label><input data-f="info.rotu" list="rodut"></div>
+        <div><label>Sukupuoli</label><select data-f="info.sukup"><option value=""></option><option>uros</option><option>narttu</option></select></div>
+        <div><label>Roturyhmä (palkintorajat)</label><select data-f="info.rotuRyhma"><option value="dreeveri">Dreeveri (75/60/45)</option><option value="basset">Bassetit (60/50/40)</option><option value="alppi">Alppienajokoira (40/30/20)</option></select></div>
+        <div><label>Ajettava riista</label><select data-f="info.riista"><option value=""></option><option>jänis</option><option>kettu</option><option>villisika (alppienajokoira)</option><option>metsäkauris (Ahvenanmaa)</option><option>valkohäntäpeura (Ahvenanmaa)</option></select></div>
+        <div><label>Syntymäaika</label><input type="date" data-f="info.syntynyt"></div>
+        <div><label>Omistaja</label><input data-f="info.omistaja"></div>
+        <div><label>Ohjaaja</label><input data-f="info.ohjaaja"></div>
+      </div>
+      <datalist id="rodut"><option>drever</option><option>alppienajokoira</option><option>basset fauve de bretagne</option><option>basset artésien normand</option><option>grand basset griffon vendéen</option><option>petit basset griffon vendéen</option><option>westfalenin dachsbracke</option></datalist>
+    </div>
+    <div class="card">
+      <h2>Olosuhteet</h2>
+      <div class="grid">
+        <div><label>Sää</label><input data-f="info.saa"></div>
+        <div><label>Lämpötila °C</label><input inputmode="decimal" data-f="info.lampo"></div>
+        <div><label>Tuuli</label><input data-f="info.tuuli"></div>
+        <div><label>Keli / lumi</label><input data-f="info.lumi"></div>
+      </div>
+      <label class="chk"><input type="checkbox" data-f="info.paikannin"> Paikanninta käytetty arvostelussa</label>
+    </div>
+    <p class="muted" style="text-align:center;margin:18px 0 6px">DRAJ arvostelukortti · © 2026 ICT- ja karttapalvelut Peltonen</p>
+  </section>
+
+  <!-- AJANOTTO -->
+  <section id="tab-time" class="hidden">
+    <div id="liveBox"></div>
+    <div class="stats" id="stats"></div>
+    <div class="card">
+      <h2>Kirjaa tapahtuma <span class="k">aika = nyt, muokattavissa</span></h2>
+      <div class="evbtns" id="evbtns"></div>
+    </div>
+    <div class="card">
+      <h2>Tapahtumat</h2>
+      <div class="evlist" id="evlist"></div>
+      <p class="muted">Haku alkaa irtilaskusta ja päättyy ajon alkuun (ylösotto) tai kytkentään; hakuaikaa on yhteensä 240 min. Ajon alku aloittaa ajoerän (120 tai 60 min, valinta Arvostelu-välilehdellä), joka päättyy automaattisesti erän ajan täyttyessä tai kytkentään. Hukka – Ajo jatkuu merkitsee katkon; vähintään 5 min hukat vähennetään ajoajasta. Toista erää varten kirjataan uusi irtilasku.</p>
+    </div>
+  </section>
+
+  <!-- REITIT -->
+  <section id="tab-map" class="hidden">
+    <div class="card">
+      <h2>Ryhmän GPS-reitti <span class="k">tämä puhelin</span></h2>
+      <div class="row"><button class="btn pri" id="btnGps">Aloita seuranta</button><span class="muted" id="gpsStatus"></span></div>
+      <label class="chk"><input type="checkbox" id="chkEvPos"> Tallenna sijainti jokaiseen tapahtumaan</label>
+      <p class="muted" style="margin:4px 0 0">Pidä sovellus auki ja näyttö päällä seurannan aikana – selain ei saa sijaintia taustalla. Sovellus pyytää näyttöä pysymään päällä.</p>
+    </div>
+    <div class="card">
+      <h2>Koiran reitti <span class="k">paikantimesta</span></h2>
+      <div class="row">
+        <label class="btn" style="margin:0">Tuo GPX / KML<input type="file" accept=".gpx,.kml,application/gpx+xml,application/vnd.google-earth.kml+xml,text/xml,application/xml" hidden id="dogFile"></label>
+        <button class="btn sm ghost danger hidden" id="btnDogDel">Poista koiran reitti</button>
+      </div>
+      <div class="muted" id="dogInfo" style="margin-top:8px"></div>
+      <p class="muted" style="margin:6px 0 0">Vie koiran jälki paikantimesta (esim. Garmin, Tracker, Ultracom) GPX- tai KML-tiedostona ja tuo se tähän. Aikaleimat yhdistetään ajanoton tapahtumiin.</p>
+    </div>
+    <div class="card">
+      <h2>Kartta</h2>
+      <div id="lmap" style="width:100%;height:min(70vh,520px);border-radius:10px;border:1px solid var(--line);overflow:hidden;isolation:isolate;z-index:0"></div>
+      <canvas id="mapCanvas" class="hidden" style="width:100%;aspect-ratio:1/1;background:var(--bg);border-radius:10px;border:1px solid var(--line);touch-action:none"></canvas>
+      <div class="row" style="margin-top:8px"><button class="btn sm" id="btnFit">Näytä kaikki</button><button class="btn sm" id="btnMe">Oma sijainti</button><span class="muted" id="mapMsg"></span></div>
+      <div class="muted" style="margin-top:6px"><span class="tag" style="background:#3b6fb6"></span>Ryhmä &nbsp; <span class="tag" style="background:#d9822b"></span>Koira &nbsp; <span class="tag" style="background:#7a6a2a"></span>Yöjälki &nbsp; <span class="tag" style="background:#2f7a4a"></span>Ajo alkaa &nbsp; <span class="tag" style="background:#c9822b"></span>Ajettava nähty</div>
+    </div>
+    <div class="card">
+      <h2>Lasketut matkat</h2>
+      <div id="distTable"></div>
+      <p class="muted">Arvot siirtyvät arvosteluun automaattisesti (harmaat ehdotusarvot). Käsin syötetty arvo ohittaa ne.</p>
+    </div>
+    <div class="row"><button class="btn" id="btnGpx">Vie reitit GPX</button><button class="btn ghost danger" id="btnGroupDel">Poista ryhmän reitti</button></div>
+  </section>
+
+  <!-- ARVOSTELU -->
+  <section id="tab-score" class="hidden">
+    <p class="muted" style="margin-top:0">Ajoajan pisteet lasketaan ajanotosta (65 × ajoaika / 180). Ominaisuudet ovat tuomarien arvioita 0–5 p puolen pisteen tarkkuudella; tulokseen tulee tuomarien ja erien keskiarvo.</p>
+    <div id="cats"></div>
+  </section>
+
+  <!-- TULOS -->
+  <section id="tab-result" class="hidden">
+    <div class="card">
+      <div class="prizebox"><div class="big" id="resTotal">0</div><div><div class="pz" id="resPrize"></div><div class="muted" id="resNote" style="margin-top:6px"></div></div></div>
+    </div>
+    <div class="card">
+      <h2>Pöytäkirja</h2>
+      <table id="resTable"></table>
+    </div>
+    <div class="card">
+      <h2>Suorituksen tila</h2>
+      <select data-f="status">
+        <option value="normaali">Normaali</option>
+        <option value="keskeytettiin">Keskeytettiin (tulos lasketaan)</option>
+        <option value="luopui">Luopui (tulosta ei lasketa)</option>
+        <option value="suljettu">Suljettu (tulosta ei lasketa)</option>
+      </select>
+      <div style="margin-top:8px"><label>Syy / selvitys</label><input data-f="statusSyy"></div>
+      <div style="margin-top:8px"><label>Koepöytäkirjan päättymisaika</label><input type="time" data-f="paattyi"></div>
+    </div>
+    <div class="card">
+      <h2>Huomautukset</h2>
+      <textarea data-f="huom" placeholder="Hukkien syyt, ajolöysyys, maastokohdan vaihto, häiriöt ym."></textarea>
+    </div>
+    <div class="card">
+      <h2>Ajot ja ajat</h2>
+      <div class="muted" id="tieInfo"></div>
+    </div>
+    <div class="row">
+      <button class="btn pri" id="btnCopy">Kopioi yhteenveto</button>
+      <button class="btn" id="btnPrint">Tulosta</button>
+      <button class="btn" id="btnExport">Vie JSON</button>
+    </div>
+  </section>
+</main>
+
+<nav class="tabs">
+  <button data-tab="info" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Tiedot</button>
+  <button data-tab="time"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg>Ajanotto</button>
+  <button data-tab="map"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg>Reitit</button>
+  <button data-tab="score"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16M7 16V9M12 16V5M17 16v-4"/></svg>Arvostelu</button>
+  <button data-tab="result"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="9" r="6"/><path d="M8.5 14 7 22l5-3 5 3-1.5-8"/></svg>Tulos</button>
+</nav>
+
+<div id="printsheet"></div>
+<div class="toast" id="toast"></div>
+
+<script src="draj.js"></script>
+<script src="geo.js"></script>
+<script>
+(function(){
+'use strict';
+const H = window.DRAJ;
+const fmt2 = n => (Math.round(n*100)/100).toLocaleString('fi-FI',{maximumFractionDigits:2});
+const $ = (s, el=document) => el.querySelector(s);
+const $$ = (s, el=document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = n => (Math.round(n*10)/10).toLocaleString('fi-FI');
+const hhmm = t => { const d=new Date(t); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
+const uid = () => Math.random().toString(36).slice(2,10);
+
+const EV = {
+  irti:{l:'Irtilasku', c:'c-irti'}, yojalki:{l:'Yöjälki löytyi', c:'c-yojalki'},
+  ajo:{l:'Ajo alkaa (ylösotto)', c:'c-ajo'}, hukka:{l:'Hukka', c:'c-hukka'}, jatkuu:{l:'Ajo jatkuu', c:'c-jatkuu'},
+  nahty:{l:'Ajettava nähty', c:'c-nahty'}, eraloppu:{l:'Erä päättyy', c:'c-eraloppu'},
+  kytk:{l:'Kytketty', c:'c-kytk'}, era:{l:'Koe päättyy', c:'c-era'}
+};
+const EV_COLORS = {irti:'#2f5640',yojalki:'#7a6a2a',ajo:'#2f7a4a',hukka:'#6b6f68',jatkuu:'#4f8a7a',nahty:'#c9822b',eraloppu:'#5a3a2a',kytk:'#47567a',era:'#1d241f'};
+
+/* ---------- tallennus ---------- */
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+function blank(){
+  const today = new Date().toISOString().slice(0,10);
+  return { id: uid(), created: Date.now(), info:{pvm:today, rotuRyhma:'dreeveri'}, events:[], judges: '1', app: 'draj',
+    s:{ era1: '120' }, pts:{}, status:'normaali', statusSyy:'', huom:'', paattyi:'' };
+}
+let kokeet = store.get('draj.kokeet', []);
+let cur = kokeet.find(k => k.id === store.get('draj.cur')) || null;
+if (!cur){ cur = blank(); kokeet.unshift(cur); }
+function save(){ cur.updated = Date.now(); store.set('draj.kokeet', kokeet); store.set('draj.cur', cur.id); }
+
+/* ---------- polut ---------- */
+const getP = (o, p) => p.split('.').reduce((a,k) => a==null?undefined:a[k], o);
+function setP(o, p, v){ const ks=p.split('.'); let x=o; ks.slice(0,-1).forEach(k=>{ if(x[k]==null) x[k]={}; x=x[k]; }); x[ks[ks.length-1]]=v; }
+
+/* ---------- laskenta ---------- */
+let TRACKS = { group: [], dog: [] };
+const tlOpts = () => ({ era1: cur.s.era1, loys: [cur.s.loys1, cur.s.loys2] });
+let TL = H.timeline(cur.events, Date.now(), tlOpts());
+let GEOD = H.distances(TL, cur.events, [], []);
+const recompute = () => { TL = H.timeline(cur.events, Date.now(), tlOpts()); GEOD = H.distances(TL, cur.events, TRACKS.group, TRACKS.dog); };
+const pick = (v, auto) => (v === '' || v === undefined || v === null) ? auto : +String(v).trim().replace(',', '.');
+const nJudges = () => Math.min(3, Math.max(1, +cur.judges || 1));
+const nErat = () => Math.min(2, Math.max(1, TL.erat.length || 1));
+const PTS = [0,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5];
+function ajoMin(){ const m = pick(cur.s.ajoMin, null); return (m === null || m === undefined) ? TL.ajoMin : Math.max(0, Math.min(180, m)); }
+// cur.pts[id] = { 'e0j0': p, ... } – erä × tuomari, keskiarvo
+function cells(id){
+  const o = (cur.pts[id] && typeof cur.pts[id] === 'object' && !Array.isArray(cur.pts[id])) ? cur.pts[id] : {};
+  const out = [];
+  for (let e = 0; e < nErat(); e++) for (let j = 0; j < nJudges(); j++) { const v = o['e'+e+'j'+j]; if (v !== undefined && v !== null) out.push(v); }
+  return out;
+}
+function finalPts(){
+  const out = {};
+  H.CATS.forEach(c => {
+    const nums = cells(c.id).filter(x => typeof x === 'number');
+    out[c.id] = nums.length ? +(nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2) : null;
+  });
+  return out;
+}
+function totals(){
+  const fp = finalPts(), am = ajoMin(), ap = H.ajoPts(am);
+  let omin = 0;
+  H.CATS.forEach(c => { const p = fp[c.id]; if (typeof p === 'number') omin += p; });
+  const sum = +(omin + ap).toFixed(2);
+  const zeros = H.CATS.filter(c => cells(c.id).some(x => x === 0));
+  const zero = ['luopui','suljettu'].includes(cur.status);
+  const total = zero ? 0 : sum;
+  const missing = H.CATS.filter(c => fp[c.id] === null);
+  const warns = [];
+  if (zeros.length) warns.push('0 pistettä kohdassa ' + zeros.map(c => c.id + '. ' + c.name).join(', ') + ' → koira suljetaan kokeesta');
+  if (TL.hakuaika >= 240) warns.push('Hakuaika 240 min käytetty');
+  return { fp, ajoMin: am, ap, omin: +omin.toFixed(2), raw: sum, total, prize: zero ? 0 : H.prize(total, cur.info.rotuRyhma || 'dreeveri'), missing, zero, warns };
+}
+
+/* ---------- välilehdet ---------- */
+let tab = 'info';
+function showTab(t){
+  tab = t;
+  $$('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+  ['info','time','map','score','result'].forEach(x => $('#tab-'+x).classList.toggle('hidden', x !== t));
+  if (t === 'time') renderTime();
+  if (t === 'score') renderScore();
+  if (t === 'map') renderMap();
+  if (t === 'result') renderResult();
+  window.scrollTo(0,0);
+}
+$$('nav.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+
+/* ---------- sidotut kentät (data-f) ---------- */
+function bindFields(root=document){
+  $$('[data-f]', root).forEach(el => {
+    const v = getP(cur, el.dataset.f);
+    if (el.type === 'checkbox') el.checked = !!v; else el.value = v ?? '';
+  });
+}
+document.addEventListener('input', e => {
+  const el = e.target; if (!el.dataset || !el.dataset.f) return;
+  setP(cur, el.dataset.f, el.type === 'checkbox' ? el.checked : el.value);
+  save(); refresh();
+});
+document.addEventListener('change', e => {
+  const el = e.target; if (!el.dataset || !el.dataset.f) return;
+  setP(cur, el.dataset.f, el.type === 'checkbox' ? el.checked : el.value);
+  save(); refresh();
+  if (el.dataset.rerender) renderScore();
+});
+
+/* ---------- otsikko ---------- */
+function refreshHeader(){
+  const t = totals();
+  if (cur.total !== t.total) { cur.total = t.total; save(); }
+  $('#hdrTitle').textContent = cur.info.koira || 'DRAJ arvostelukortti';
+  $('#hdrTotal').textContent = fmt2(t.total);
+  const hp = $('#hdrPrize');
+  hp.classList.toggle('hidden', !t.prize);
+  hp.textContent = t.prize ? 'DRAJ ' + t.prize : '';
+  return t;
+}
+function refresh(){
+  recompute();
+  const t = refreshHeader();
+  if (tab === 'score') refreshScore(t);
+  if (tab === 'time') refreshStats();
+  if (tab === 'result') renderResult();
+}
+
+/* ---------- AJANOTTO ---------- */
+function renderTime(){
+  $('#evbtns').innerHTML = Object.entries(EV).map(([k,v]) => `<button class="${v.c}" data-ev="${k}"><span class="dot"></span>${v.l}</button>`).join('');
+  $$('#evbtns button').forEach(b => b.onclick = () => addEvent(b.dataset.ev));
+  renderEvList(); refreshStats();
+}
+function addEvent(type){
+  const ne = { id: uid(), t: Date.now(), type, note:'' };
+  cur.events.push(ne); stampEvent(ne);
+  if (navigator.vibrate) try{ navigator.vibrate(30); }catch(e){}
+  save(); recompute(); renderEvList(); refreshStats(); refreshHeader();
+  toast(EV[type].l + ' ' + hhmm(Date.now()));
+}
+function editTime(e){
+  let t = Math.round(e.t / 60000) * 60000;
+  const m = document.createElement('div'); m.className = 'modal';
+  const steps = [[-60,'−1 h'],[-10,'−10'],[-5,'−5'],[-1,'−1'],[60,'+1 h'],[10,'+10'],[5,'+5'],[1,'+1']];
+  m.innerHTML = `<div class="sheet tsheet"><div class="muted" style="text-align:center">${esc(EV[e.type].l)} · oli ${hhmm(e.t)}</div>
+    <div class="tt"></div>
+    <div class="steps">${steps.map(([d,l]) => `<button data-d="${d}">${l}</button>`).join('')}</div>
+    <input inputmode="numeric" placeholder="tai kirjoita, esim. 0745" style="text-align:center">
+    <div class="acts"><button class="btn" data-x>Peruuta</button><button class="btn pri" data-ok>Aseta</button></div></div>`;
+  document.body.appendChild(m);
+  const show = () => $('.tt', m).textContent = hhmm(t);
+  show();
+  $$('[data-d]', m).forEach(b => b.onclick = () => { t += (+b.dataset.d) * 60000; show(); });
+  const inp = $('input', m);
+  inp.oninput = () => {
+    const d = inp.value.replace(/\D/g, ''); if (d.length < 3) return;
+    const h = +d.slice(0, d.length - 2), mi = +d.slice(-2); if (h > 23 || mi > 59) return;
+    const x = new Date(e.t); x.setHours(h, mi, 0, 0); let nt = x.getTime();
+    if (nt - e.t > 12*3600000) nt -= 86400000; else if (e.t - nt > 12*3600000) nt += 86400000;
+    t = nt; show();
+  };
+  const close = () => m.remove();
+  $('[data-x]', m).onclick = close;
+  m.onclick = ev => { if (ev.target === m) close(); };
+  $('[data-ok]', m).onclick = () => { e.t = t; close(); save(); refresh(); renderEvList(); };
+}
+function renderEvList(){
+  const ev = [...cur.events].sort((a,b)=>b.t-a.t);
+  $('#evlist').innerHTML = ev.length ? ev.map(e => `
+    <div class="ev" data-id="${e.id}">
+      <button class="tbtn" data-evt="time" aria-label="Muuta kellonaikaa">${hhmm(e.t)}</button>
+      <div><div class="t"><span class="tag" style="background:${EV_COLORS[e.type]}"></span>${EV[e.type].l}${e.pos?' <span class="muted" title="sijainti tallennettu">📍</span>':''}</div>
+        <input placeholder="muistiinpano" value="${esc(e.note)}" data-evt="note" style="padding:4px 6px;font-size:13px;margin-top:3px"></div>
+      <button class="btn sm ghost danger" data-evt="del" aria-label="Poista">✕</button>
+    </div>`).join('') : '<p class="muted">Ei tapahtumia. Aloita irtilaskusta.</p>';
+  $$('#evlist .ev').forEach(row => {
+    const e = cur.events.find(x => x.id === row.dataset.id);
+    $('[data-evt=time]', row).onclick = () => editTime(e);
+    $('[data-evt=note]', row).oninput = ev2 => { e.note = ev2.target.value; save(); };
+    $('[data-evt=del]', row).onclick = () => { askConfirm(`Poistetaanko ${EV[e.type].l} ${hhmm(e.t)}?`, () => { cur.events = cur.events.filter(x => x !== e); save(); refresh(); renderEvList(); }); };
+  });
+}
+function refreshStats(){
+  const s = TL, t = totals();
+  const st = (v,l) => `<div class="stat"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+  $('#stats').innerHTML = st(s.hakuaika,'Hakuaika min') + st(s.ajoMin,'Ajoaika min') + st(fmt2(t.ap),'Ajopisteet')
+    + st(s.erat.length + ' / 2','Ajoerät') + st(s.hukkaCount + (s.hukatMin ? ' / ' + s.hukatMin : ''),'Hukat / vähennys min') + st(s.hakuJaljella,'Hakuaikaa jäljellä');
+  const lb = $('#liveBox');
+  const nowM = t => Math.round((Date.now() - t) / 60000);
+  const e = s.liveEra;
+  if (s.live && e) {
+    const g = e.gaps[e.gaps.length - 1];
+    const huk = g && g.open;
+    lb.innerHTML = `<div class="live${huk ? ' sh' : ''}"><span class="pulse"></span>Erä ${e.n} (${e.len} min) · ${huk ? `hukka ${nowM(g.start)} min` : 'ajo käynnissä'} · ajoa ${e.ajo} min · erää jäljellä ${e.jaljella} min</div>`;
+  } else if (s.live) {
+    const h = s.haut[s.haut.length - 1];
+    lb.innerHTML = `<div class="live" style="background:var(--pine2)"><span class="pulse"></span>Haku käynnissä · ${h ? nowM(h.start) : 0} min · hakuaikaa jäljellä ${s.hakuJaljella} min</div>`;
+  } else lb.innerHTML = '';
+}
+setInterval(() => { if (document.visibilityState === 'visible' && cur.events.length) refresh(); }, 15000);
+
+/* ---------- ARVOSTELU ---------- */
+const ph = v => `placeholder="${v ?? ''}"`;
+const CRIT = {
+  haku: 'Haun laajuus, järjestelmällisyys ja itsenäisyys ennen yöjäljen löytämistä.',
+  ylos: 'Yöjäljen selvittäminen, eteneminen kohti ajettavaa ja äänenanto jäljellä ylösottoon asti.',
+  ajov: 'Ajon varmuus ja hukkien selvittäminen: miten koira pysyy jäljellä ja selvittää hukat.',
+  hauk: 'Haukun kuuluvuus: kuinka hyvin ajon kulkua voi seurata haukun perusteella.',
+  vaiht: 'Haukun vaihtelevuus ja kertovuus: kertooko haukku ajon tilanteista (jäljen tuoreus, hukka, ajettavan näkeminen).',
+  yht: 'Yhteistyö ohjaajan kanssa ja tottelevaisuus, kytkettävyys.',
+  koko: 'Kokonaisvaikutelma koiran työskentelystä koko kokeen ajalta.'
+};
+function ptsRow(c, e, j){
+  const lbl = (nErat() > 1 ? `Erä ${e+1}` : '') + (nErat() > 1 && nJudges() > 1 ? ' · ' : '') + (nJudges() > 1 ? `T${j+1}` : '');
+  return `<div class="pts" data-pts="${c.id}" data-k="e${e}j${j}">${lbl ? `<span class="jl">${lbl}</span>` : ''}
+    ${PTS.map(v => `<button data-v="${v}">${String(v).replace('.', ',')}</button>`).join('')}</div>`;
+}
+function renderScore(){
+  const er = TL.erat;
+  $('#cats').innerHTML = `
+    <div class="card">
+      <h2>Ajoaika <span class="k">enintään 65 p</span><span class="w" id="ajoW"></span></h2>
+      <div class="grid">
+        <div><label>Ensimmäisen erän pituus</label><select data-f="s.era1"><option value="120">120 min (toinen 60)</option><option value="60">60 min (toinen 120)</option></select></div>
+        <div><label>Hyväksytty ajoaika min (yht.)</label><input inputmode="numeric" data-f="s.ajoMin" ${ph(TL.ajoMin)}></div>
+        <div><label>Ajolöysyys erä 1 min</label><input inputmode="numeric" data-f="s.loys1" placeholder="0"></div>
+        <div><label>Ajolöysyys erä 2 min</label><input inputmode="numeric" data-f="s.loys2" placeholder="0"></div>
+      </div>
+      <div id="ajoBreak" class="muted" style="margin-top:6px"></div>
+      <details><summary>Arvosteluperusteet</summary>
+        <p>Ajoerät 120 ja 60 min; ohjaaja valitsee järjestyksen ennen kuin 60 min on kulunut ensimmäisen erän alusta. Toinen erä vain, jos hakuaikaa on jäljellä (yhteensä enintään 240 min). Ajoaikaan lasketaan jokainen haukkuen ajettu minuutti; vähintään 5 min hukat ja ajolöysyys vähennetään erän pituudesta.</p>
+        <p>Ajoajan pisteet = 65 × ajoaika / 180.</p>
+        <table><tr><th>min</th><td class="n">30</td><td class="n">60</td><td class="n">90</td><td class="n">120</td><td class="n">150</td><td class="n">180</td></tr>
+        <tr><th>p</th><td class="n">10,83</td><td class="n">21,67</td><td class="n">32,50</td><td class="n">43,33</td><td class="n">54,17</td><td class="n">65,00</td></tr></table></details>
+    </div>
+    <div class="card"><div class="row"><label style="margin:0;flex:1">Palkintotuomareita (pisteet tuomarien ja erien keskiarvona)</label>
+      <select data-f="judges" data-rerender="1" style="width:90px"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></div>
+      ${er.length > 1 ? '' : '<p class="muted" style="margin:6px 0 0">Toisen erän pisterivit tulevat näkyviin, kun toinen erä on alkanut ajanotossa.</p>'}</div>
+    <h3>Ominaisuudet 0–5 p</h3>` +
+    H.CATS.map(c => `
+    <div class="card" id="cat-${c.id}">
+      <h2>${c.id}. ${c.name}<span class="w" data-w="${c.id}"></span></h2>
+      ${Array.from({length:nErat()},(_,e)=>Array.from({length:nJudges()},(_,j)=>ptsRow(c,e,j)).join('')).join('')}
+      <div class="sugg-line" data-sl="${c.id}"></div>
+      <details><summary>Arvosteluperusteet</summary><p>${CRIT[c.key]} 0 p tästä kohdasta johtaa sulkemiseen.</p></details>
+    </div>`).join('');
+  bindFields($('#cats'));
+  if (!cur.judges) $('[data-f=judges]').value = '1';
+  if (!cur.s.era1) $('[data-f="s.era1"]').value = '120';
+  $$('.pts').forEach(row => row.onclick = ev => {
+    const b = ev.target.closest('button'); if (!b) return;
+    const id = +row.dataset.pts, k = row.dataset.k, v = +b.dataset.v;
+    const o = (cur.pts[id] && typeof cur.pts[id] === 'object' && !Array.isArray(cur.pts[id])) ? cur.pts[id] : {};
+    o[k] = o[k] === v ? null : v; cur.pts[id] = o; save(); refresh();
+  });
+  refreshScore(totals());
+}
+function refreshScore(t){
+  H.CATS.forEach(c => {
+    const o = (cur.pts[c.id] && typeof cur.pts[c.id] === 'object' && !Array.isArray(cur.pts[c.id])) ? cur.pts[c.id] : {};
+    $$(`[data-pts="${c.id}"]`).forEach(row => {
+      const v0 = o[row.dataset.k];
+      $$('button', row).forEach(b => b.classList.toggle('on', v0 !== undefined && v0 !== null && +b.dataset.v === v0));
+    });
+    const fp = t.fp[c.id], n = cells(c.id).length;
+    let html = fp === null ? 'Valitse pisteet' : (n > 1 ? `keskiarvo <b>${fmt2(fp)}</b> (${n} arviota)` : '');
+    if (cells(c.id).some(x => x === 0)) html += '<div class="warn">0 p → koira suljetaan kokeesta.</div>';
+    $(`[data-sl="${c.id}"]`).innerHTML = html;
+    $(`[data-w="${c.id}"]`).textContent = fp === null ? '' : fmt2(fp) + ' p';
+  });
+  const w = $('#ajoW');
+  if (w) {
+    w.textContent = fmt2(t.ap) + ' p';
+    $('#ajoBreak').textContent = TL.erat.length ? TL.erat.map(a => `Erä ${a.n} (${a.len} min): ${a.kesto} min − hukat ${a.hukat}${a.loys ? ' − löysyys ' + a.loys : ''} = ${a.ajo} min${a.open ? ' (käynnissä)' : ''}`).join(' · ') + ` · yhteensä ${t.ajoMin} min` : 'Ei ajoeriä ajanotossa';
+  }
+}
+
+/* ---------- TULOS ---------- */
+const PRIZE_TXT = p => p ? `DRAJ ${p}` : 'Ei palkintoa';
+function renderResult(){
+  const t = totals();
+  $('#resTotal').textContent = fmt2(t.total);
+  const pz = $('#resPrize'); pz.textContent = cur.status === 'suljettu' ? 'Suljettu' : cur.status === 'luopui' ? 'Luopui' : PRIZE_TXT(t.prize);
+  pz.classList.toggle('none', !t.prize);
+  const lim = (H.BREEDS[cur.info.rotuRyhma] || H.BREEDS.dreeveri);
+  const notes = [];
+  if (t.missing.length) notes.push('Arvostelematta: ' + t.missing.map(c=>c.id+'. '+c.name).join(', '));
+  if (t.zero) notes.push(`Pisteet ennen ${cur.status === 'luopui' ? 'luopumista' : 'sulkemista'} ${fmt2(t.raw)} – tulosta ei lasketa`);
+  notes.push(`Rajat (${lim.name}): 1. ${lim.limits[0]} · 2. ${lim.limits[1]} · 3. ${lim.limits[2]} p`);
+  $('#resNote').innerHTML = notes.map(esc).join('<br>') + t.warns.map(w => `<div class="warn">⚠ ${esc(w)}</div>`).join('');
+  $('#resTable').innerHTML = `<tr><th>Arvosteluperuste</th><th class="n">p</th></tr>` +
+    `<tr><td>Ajoaika ${t.ajoMin} min</td><td class="n">${fmt2(t.ap)}</td></tr>` +
+    H.CATS.map(c => { const p = t.fp[c.id]; return `<tr><td>${c.id}. ${c.name}</td><td class="n">${p===null?'':fmt2(p)}</td></tr>`; }).join('') +
+    `<tr><td>Ominaisuuspisteet yhteensä</td><td class="n">${fmt2(t.omin)}</td></tr>` +
+    `<tr><th>Loppupisteet</th><th class="n">${fmt2(t.total)}</th></tr>`;
+  $('#tieInfo').innerHTML = `Hakuaika <b>${TL.hakuaika} min</b> · Ajoaika <b>${t.ajoMin} min</b> · Hukat ${TL.hukkaCount} (vähennetty ${TL.hukatMin} min)` +
+    (TL.erat.length ? '<br>' + TL.erat.map(a => `Erä ${a.n}: ${hhmm(a.start)}–${hhmm(a.end)}, ${a.len} min, ajoa ${a.ajo} min`).join('<br>') : '');
+  bindFields($('#tab-result'));
+  buildPrint(t);
+}
+function summaryText(t){
+  const i = cur.info;
+  const L = [];
+  L.push(`DREEVERIEN AJOKOE (DRAJ) ${i.pvm||''} ${i.paikka||''}`.trim());
+  L.push(`Koira: ${i.koira||''} ${i.reknro?'('+i.reknro+')':''} ${i.rotu||''} ${i.sukup||''}`.trim());
+  if (i.omistaja || i.ohjaaja) L.push(`Omistaja: ${i.omistaja||''}  Ohjaaja: ${i.ohjaaja||''}`);
+  L.push(`Ylituomari: ${i.ylituomari||''}  Palkintotuomarit: ${i.tuomari||''}`);
+  if (i.riista) L.push(`Ajettava: ${i.riista}`);
+  L.push('');
+  L.push(`Ajoaika ${t.ajoMin} min`.padEnd(52) + fmt2(t.ap));
+  H.CATS.forEach(c => { const p = t.fp[c.id]; L.push(`${c.id}. ${c.name}`.padEnd(52) + (p===null?'':fmt2(p))); });
+  L.push('');
+  L.push(`Hakuaika ${TL.hakuaika} min · Hukat ${TL.hukkaCount} (vähennetty ${TL.hukatMin} min)`);
+  TL.erat.forEach(a => L.push(`Erä ${a.n}: ${hhmm(a.start)}–${hhmm(a.end)} (${a.len} min) ajoa ${a.ajo} min`));
+  const g = GEOD;
+  if (g.hasDog) L.push(`Matkat: haku ${g.hakuKm!=null?fmt2(g.hakuKm)+' km':'–'}${g.erat.length?' · erät '+g.erat.map(a=>fmt2(a.km)+' km').join(', '):''}`);
+  if (cur.status !== 'normaali') L.push(`Tila: ${cur.status}${cur.statusSyy?' – '+cur.statusSyy:''}`);
+  L.push(`LOPPUPISTEET ${fmt2(t.total)} – ${PRIZE_TXT(t.prize)}`);
+  if (cur.huom) L.push('', 'Huomautukset: ' + cur.huom);
+  return L.join('\n');
+}
+function buildPrint(t){
+  $('#printsheet').innerHTML = `<h1>Dreeverien ajokoe (DRAJ) – koepöytäkirja</h1><pre style="font-family:ui-monospace,Menlo,monospace;white-space:pre-wrap">${esc(summaryText(t))}</pre>
+  <h3 style="color:#000">Tapahtumat</h3><table>${[...cur.events].sort((a,b)=>a.t-b.t).map(e=>`<tr><td>${hhmm(e.t)}</td><td>${EV[e.type].l}</td><td>${esc(e.note)}</td></tr>`).join('')}</table>
+  <p style="margin-top:30px">Palkintotuomarit: ______________________ &nbsp; Ylituomari: ______________________</p>`;
+}
+$('#btnCopy').onclick = async () => {
+  const txt = summaryText(totals());
+  try { await navigator.clipboard.writeText(txt); toast('Kopioitu leikepöydälle'); }
+  catch(e){ showText('Yhteenveto', txt); }
+};
+$('#btnPrint').onclick = () => { try { window.print(); } catch(e){ toast('Tulostus ei ole käytettävissä tässä näkymässä'); } };
+$('#btnExport').onclick = () => {
+  const data = JSON.stringify({ ...cur, tracks: TRACKS });
+  downloadFile(`draj-${(cur.info.koira||'koe').replace(/\W+/g,'_')}-${cur.info.pvm||''}.json`, data, 'application/json', 'JSON');
+};
+
+/* ---------- kokeiden lista ---------- */
+$('#btnList').onclick = () => {
+  const m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = `<div class="sheet"><div class="row" style="margin-bottom:10px"><b style="flex:1;font-size:17px">Kokeet</b>
+    <button class="btn pri sm" data-a="new">+ Uusi koe</button><label class="btn sm" style="margin:0">Tuo JSON<input type="file" accept=".json,application/json" hidden data-a="import"></label>
+    <button class="btn sm ghost" data-a="close">Sulje</button></div>
+    <div class="list">${kokeet.map(k => { const tot = k.id === cur.id ? totals().total : (k.total ?? scoreOf(k)); return `<div class="item" data-id="${k.id}">
+      <div class="m"><b>${esc(k.info.koira || 'Nimetön koira')}${k.id===cur.id?' ·  avoinna':''}</b><span>${esc(k.info.pvm||'')} ${esc(k.info.paikka||'')} · ${fmt2(tot)} p</span></div>
+      <button class="btn sm" data-a="open">Avaa</button><button class="btn sm ghost danger" data-a="del">✕</button></div>`; }).join('')}</div>
+    <p class="muted">Tiedot tallentuvat tähän laitteeseen. Vie tärkeät kokeet JSON-tiedostoksi varmuuskopioksi.</p></div>`;
+  document.body.appendChild(m);
+  m.onclick = e => {
+    if (e.target === m) return m.remove();
+    const a = e.target.closest('[data-a]'); if (!a) return;
+    const id = e.target.closest('.item')?.dataset.id;
+    if (a.dataset.a === 'close') m.remove();
+    if (a.dataset.a === 'new'){ cur = blank(); kokeet.unshift(cur); save(); m.remove(); reload(); showTab('info'); }
+    if (a.dataset.a === 'open'){ cur = kokeet.find(k=>k.id===id); save(); m.remove(); reload(); }
+    if (a.dataset.a === 'del'){ askConfirm('Poistetaanko koe pysyvästi?', () => { kokeet = kokeet.filter(k=>k.id!==id); idb.del(id+':group'); idb.del(id+':dog'); if (cur.id===id){ cur = kokeet[0] || blank(); if (!kokeet.length) kokeet.push(cur); } save(); m.remove(); reload(); }); }
+  };
+  $('[data-a=import]', m).onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    f.text().then(txt => { const k = JSON.parse(txt); if (!k.s || !k.info || k.app !== 'draj') throw 0; k.id = uid(); const tr = k.tracks; delete k.tracks;
+      if (tr) { if (tr.group && tr.group.length) idb.set(k.id+':group', tr.group); if (tr.dog && tr.dog.length) idb.set(k.id+':dog', tr.dog); }
+      kokeet.unshift(k); cur = k; save(); m.remove(); setTimeout(reload, 200); toast('Koe tuotu'); })
+      .catch(() => toast('Tiedostoa ei voitu lukea'));
+  };
+};
+function scoreOf(k){ const keep = cur, tl = TL, gd = GEOD; cur = k; TL = H.timeline(k.events, Date.now(), { era1: (k.s||{}).era1, loys: [(k.s||{}).loys1, (k.s||{}).loys2] }); GEOD = H.distances(TL, k.events, [], []); const t = totals().total; cur = keep; TL = tl; GEOD = gd; return t; }
+function reload(){ TRACKS = { group: [], dog: [] }; LF.fitted = false; LF.userMoved = false; recompute(); bindFields(); refreshHeader(); showTab(tab); loadTracks(cur.id).then(() => { recompute(); refreshHeader(); if (tab==='map') renderMap(); if (tab==='score') renderScore(); }); }
+
+/* ---------- apuikkunat ---------- */
+let toastT;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('show'), 1800); }
+function askConfirm(msg, ok){
+  const m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = `<div class="sheet"><p style="font-size:16px">${esc(msg)}</p><div class="row"><button class="btn danger" data-y>Poista</button><button class="btn" data-n>Peruuta</button></div></div>`;
+  document.body.appendChild(m);
+  $('[data-y]', m).onclick = () => { m.remove(); ok(); };
+  $('[data-n]', m).onclick = () => m.remove();
+  m.onclick = e => { if (e.target === m) m.remove(); };
+}
+function showText(title, txt){
+  const m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = `<div class="sheet"><b>${esc(title)}</b><textarea style="min-height:50vh;margin-top:8px;font-family:ui-monospace,monospace;font-size:13px">${esc(txt)}</textarea><button class="btn" style="margin-top:8px">Sulje</button></div>`;
+  document.body.appendChild(m); $('button', m).onclick = () => m.remove();
+}
+
+/* ---------- REITIT: tallennus (IndexedDB) ---------- */
+const idb = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise((res, rej) => {
+    try { const r = indexedDB.open('draj', 1); r.onupgradeneeded = () => r.result.createObjectStore('tracks'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }
+    catch(e){ rej(e); }
+  }));
+  const tx = (mode, fn) => open().then(db => new Promise((res, rej) => { const t = db.transaction('tracks', mode); const st = t.objectStore('tracks'); const r = fn(st); t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); }));
+  return {
+    get: k => tx('readonly', st => st.get(k)).catch(() => store.get('draj.trk.'+k, null)),
+    set: (k, v) => tx('readwrite', st => st.put(v, k)).catch(() => store.set('draj.trk.'+k, v)),
+    del: k => tx('readwrite', st => st.delete(k)).catch(() => {})
+  };
+})();
+async function loadTracks(id){
+  const [g, d] = await Promise.all([idb.get(id+':group'), idb.get(id+':dog')]);
+  if (cur.id !== id) return;
+  TRACKS.group = g || []; TRACKS.dog = d || [];
+  if (gps.id && gps.kokeId === id) TRACKS.group = gps.buf.length >= TRACKS.group.length ? gps.buf : TRACKS.group;
+}
+const saveTrack = (kind) => idb.set(cur.id+':'+kind, TRACKS[kind]);
+
+/* ---------- REITIT: GPS-seuranta ---------- */
+const gps = { id: null, kokeId: null, buf: [], last: null, lock: null, err: '', saveT: 0 };
+async function wakeLock(on){
+  try {
+    if (on && 'wakeLock' in navigator) { gps.lock = await navigator.wakeLock.request('screen'); }
+    else if (!on && gps.lock) { await gps.lock.release(); gps.lock = null; }
+  } catch(e){}
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && gps.id) wakeLock(true);
+  if (document.visibilityState === 'hidden' && gps.id && gps.kokeId === cur.id) saveTrack('group');
+});
+function onFix(p){
+  const c = p.coords, fix = [p.timestamp || Date.now(), +c.latitude.toFixed(6), +c.longitude.toFixed(6), Math.round(c.accuracy)];
+  gps.last = fix; gps.err = '';
+  if (c.accuracy <= 50 && gps.kokeId === cur.id) {
+    const tr = TRACKS.group, prev = tr[tr.length-1];
+    if (!prev || window.GEO.dist(prev, fix) >= 5 || fix[0] - prev[0] >= 30000) { tr.push(fix); gps.buf = tr; }
+    if (Date.now() - gps.saveT > 20000) { gps.saveT = Date.now(); saveTrack('group'); }
+  }
+  if (tab === 'map') { gpsStatus(); if (Date.now() - (gps.drawT||0) > 5000) { gps.drawT = Date.now(); recompute(); drawMap(); renderDist(); } }
+}
+function startGps(){
+  if (!('geolocation' in navigator)) return toast('Laite ei tue paikannusta');
+  gps.kokeId = cur.id; gps.buf = TRACKS.group;
+  gps.id = navigator.geolocation.watchPosition(onFix, e => { gps.err = e.code === 1 ? 'Sijaintilupa evätty' : 'Ei GPS-signaalia'; gpsStatus(); }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 30000 });
+  wakeLock(true); gpsStatus();
+}
+function stopGps(){
+  if (gps.id !== null) navigator.geolocation.clearWatch(gps.id);
+  gps.id = null; wakeLock(false);
+  if (gps.kokeId === cur.id) saveTrack('group');
+  gpsStatus(); refresh();
+}
+function gpsStatus(){
+  const b = $('#btnGps'); if (!b) return;
+  const on = gps.id !== null && gps.kokeId === cur.id;
+  b.textContent = on ? 'Lopeta seuranta' : 'Aloita seuranta';
+  b.classList.toggle('danger', on);
+  const km = window.GEO.length(TRACKS.group, -Infinity, Infinity) / 1000;
+  let t = `${TRACKS.group.length} pistettä · ${fmt(km)} km`;
+  if (on) t = (gps.last ? `±${gps.last[3]} m · ` : 'Haetaan sijaintia… · ') + t;
+  if (gps.err) t = gps.err + ' · ' + t;
+  if (gps.id !== null && gps.kokeId !== cur.id) t = 'Seuranta käynnissä toisessa kokeessa · ' + t;
+  $('#gpsStatus').textContent = t;
+}
+// sijainti tapahtumaan
+function stampEvent(e){
+  if (cur.evPos === false || !('geolocation' in navigator)) return;
+  if (gps.last && Date.now() - gps.last[0] < 30000) { e.pos = [gps.last[1], gps.last[2], gps.last[3]]; return; }
+  try {
+    navigator.geolocation.getCurrentPosition(p => { e.pos = [+p.coords.latitude.toFixed(6), +p.coords.longitude.toFixed(6), Math.round(p.coords.accuracy)]; save(); refresh(); },
+      () => {}, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+  } catch(err){}
+}
+
+/* ---------- REITIT: näkymä ---------- */
+function renderMap(){
+  $('#btnGps').onclick = () => (gps.id !== null && gps.kokeId === cur.id) ? stopGps() : (gps.id !== null ? (stopGps(), startGps()) : startGps());
+  const ce = $('#chkEvPos'); ce.checked = cur.evPos !== false; ce.onchange = () => { cur.evPos = ce.checked; save(); };
+  $('#dogFile').onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    f.text().then(txt => {
+      const pts = window.GEO.parseTrack(txt);
+      if (pts.length < 2) throw 0;
+      TRACKS.dog = pts; saveTrack('dog'); LF.fitted = false; LF.userMoved = false; recompute(); renderMap(); refreshHeader();
+      toast(`Koiran reitti tuotu: ${pts.length} pistettä`);
+    }).catch(() => toast('Tiedostosta ei löytynyt aikaleimattua reittiä'));
+    e.target.value = '';
+  };
+  $('#btnDogDel').onclick = () => askConfirm('Poistetaanko koiran reitti?', () => { TRACKS.dog = []; idb.del(cur.id+':dog'); recompute(); renderMap(); refreshHeader(); });
+  $('#btnGroupDel').onclick = () => askConfirm('Poistetaanko ryhmän GPS-reitti?', () => { if (gps.kokeId === cur.id) stopGps(); TRACKS.group = []; gps.buf = TRACKS.group; idb.del(cur.id+':group'); recompute(); renderMap(); refreshHeader(); });
+  $('#btnGpx').onclick = () => {
+    if (!TRACKS.group.length && !TRACKS.dog.length) return toast('Ei tallennettuja reittejä');
+    const gpx = window.GEO.toGPX({ 'ryhmä': TRACKS.group, 'koira': TRACKS.dog }, cur.info.koira || 'DRAJ');
+    downloadFile(`draj-${(cur.info.koira||'koe').replace(/\W+/g,'_')}-${cur.info.pvm||''}.gpx`, gpx, 'application/gpx+xml', 'GPX');
+  };
+  const d = TRACKS.dog;
+  $('#dogInfo').textContent = d.length ? `${d.length} pistettä · ${hhmm(d[0][0])}–${hhmm(d[d.length-1][0])} · ${fmt2(GEOD.dogKm)} km` : 'Ei koiran reittiä.';
+  $('#btnDogDel').classList.toggle('hidden', !d.length);
+  if (d.length && cur.events.length) {
+    const ev = cur.events.map(e => e.t), lo = Math.min(...ev), hi = Math.max(...ev);
+    if (d[d.length-1][0] < lo - 3600000 || d[0][0] > hi + 3600000) $('#dogInfo').textContent += ' · ⚠ reitin kellonajat eivät osu ajanoton tapahtumiin';
+  }
+  $('#btnFit').onclick = () => { LF.userMoved = false; if (LF.map) fitMap(true); };
+  $('#btnMe').onclick = () => {
+    const go = (la, lo) => { if (LF.map) { LF.prog = true; LF.map.setView([la, lo], Math.max(LF.map.getZoom(), 14)); LF.userMoved = true; setTimeout(() => LF.prog = false, 400); } };
+    if (gps.last && Date.now() - gps.last[0] < 60000) return go(gps.last[1], gps.last[2]);
+    try { navigator.geolocation.getCurrentPosition(p => { gps.last = [Date.now(), p.coords.latitude, p.coords.longitude, Math.round(p.coords.accuracy)]; go(p.coords.latitude, p.coords.longitude); drawMap(); }, () => toast('Sijaintia ei saatu'), { enableHighAccuracy: true, timeout: 15000 }); } catch(e){}
+  };
+  gpsStatus(); drawMap(); renderDist();
+}
+function renderDist(){
+  const g = GEOD, km = v => v === null || v === undefined ? '–' : fmt2(v) + ' km', m = v => v === null || v === undefined ? '–' : v + ' m';
+  let h = '<table><tr><th>Haku</th><th class="n">Kesto</th><th class="n">Koiran matka</th><th class="n">Max etäisyys</th></tr>';
+  h += TL.haut.length ? TL.haut.map((x,i) => { const d = g.haut[i] || {}; return `<tr><td>${i+1}</td><td class="n">${Math.round((x.end-x.start)/60000)} min</td><td class="n">${km(d.km)}</td><td class="n">${m(d.dist)}</td></tr>`; }).join('') : '<tr><td colspan="4" class="muted">Ei hakuja ajanotossa</td></tr>';
+  h += '</table><table style="margin-top:10px"><tr><th>Ajoerä</th><th class="n">Ajoaika</th><th class="n">Koiran matka</th></tr>';
+  h += TL.erat.length ? TL.erat.map((a,i) => { const d = g.erat[i] || {}; return `<tr><td>${a.n} (${a.len} min)</td><td class="n">${a.ajo} min</td><td class="n">${km(d.km)}</td></tr>`; }).join('') : '<tr><td colspan="3" class="muted">Ei ajoeriä ajanotossa</td></tr>';
+  h += '</table><table style="margin-top:10px">';
+  h += `<tr><td>Hakujen matka yhteensä</td><td class="n">${km(g.hakuKm)}</td></tr>`;
+  h += `<tr><td>Ryhmän kulkema matka</td><td class="n">${km(g.groupKm ? +g.groupKm.toFixed(2) : 0)}</td></tr>`;
+  h += `<tr><td>Koiran kulkema matka</td><td class="n">${km(g.dogKm ? +g.dogKm.toFixed(2) : 0)}</td></tr></table>`;
+  if (!g.hasDog) h += '<p class="muted">Matkat lasketaan koiran reitistä – tuo se paikantimesta.</p>';
+  $('#distTable').innerHTML = h;
+}
+/* ---------- karttapohja (Leaflet + OpenTopoMap / OpenStreetMap) ---------- */
+const LF = { p: null, map: null, layer: null, fitted: false, userMoved: false };
+function loadLeaflet(){
+  if (window.L) return Promise.resolve(window.L);
+  if (LF.p) return LF.p;
+  LF.p = new Promise((res, rej) => {
+    const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'; document.head.appendChild(css);
+    const js = document.createElement('script'); js.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';
+    js.onload = () => res(window.L); js.onerror = () => { LF.p = null; rej(new Error('leaflet')); };
+    document.head.appendChild(js);
+    setTimeout(() => { if (!window.L) { LF.p = null; rej(new Error('timeout')); } }, 12000);
+  });
+  return LF.p;
+}
+function initLeaflet(L){
+  if (LF.map) { setTimeout(() => LF.map.invalidateSize(), 50); return; }
+  const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, subdomains: 'abc',
+    attribution: 'Kartta: © <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA), © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' });
+  const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' });
+  LF.map = L.map('lmap', { layers: [topo], zoomControl: true, attributionControl: true }).setView([62.9, 27.6], 6);
+  L.control.layers({ 'Maastokartta': topo, 'Katukartta': osm }, null, { position: 'topright' }).addTo(LF.map);
+  L.control.scale({ imperial: false }).addTo(LF.map);
+  LF.layer = L.layerGroup().addTo(LF.map);
+  LF.map.on('dragstart zoomstart', e => { if (!LF.prog) LF.userMoved = true; });
+  setTimeout(() => LF.map.invalidateSize(), 50);
+}
+function fitMap(force){
+  if (!LF.map) return;
+  const pts = mapPoints();
+  if (!pts.length) return;
+  if (!force && (LF.fitted || LF.userMoved)) return;
+  LF.prog = true;
+  if (pts.length === 1) LF.map.setView([pts[0][1], pts[0][2]], 15); else LF.map.fitBounds(pts.map(p => [p[1], p[2]]), { padding: [24, 24], maxZoom: 16 });
+  setTimeout(() => LF.prog = false, 400);
+  LF.fitted = true;
+}
+function mapPoints(){ return [...TRACKS.group, ...TRACKS.dog, ...cur.events.filter(e => e.pos).map(e => [e.t, e.pos[0], e.pos[1]])]; }
+function drawLeaflet(){
+  const L = window.L; if (!L || !LF.map) return;
+  LF.layer.clearLayers();
+  const ll = tr => tr.map(p => [p[1], p[2]]);
+  if (TRACKS.group.length > 1) L.polyline(ll(TRACKS.group), { color: '#3b6fb6', weight: 4, opacity: .85 }).bindTooltip('Ryhmä').addTo(LF.layer);
+  if (TRACKS.dog.length > 1) L.polyline(ll(TRACKS.dog), { color: '#d9822b', weight: 3, opacity: .9 }).bindTooltip('Koira').addTo(LF.layer);
+  cur.events.filter(e => e.pos).forEach(e => L.circleMarker([e.pos[0], e.pos[1]], { radius: 5, color: '#fff', weight: 1.5, fillColor: EV_COLORS[e.type], fillOpacity: 1 })
+    .bindTooltip(`${EV[e.type].l} ${hhmm(e.t)} (ryhmä)`).addTo(LF.layer));
+  if (TRACKS.dog.length) cur.events.filter(e => ['yojalki','ajo','nahty','hukka'].includes(e.type)).forEach(e => {
+    const p = window.GEO.at(TRACKS.dog, e.t); if (!p) return;
+    L.circleMarker([p[1], p[2]], { radius: e.type === 'ajo' ? 9 : 7, color: '#fff', weight: 2, fillColor: EV_COLORS[e.type], fillOpacity: 1 })
+      .bindTooltip(`Koira: ${EV[e.type].l} ${hhmm(e.t)}`).addTo(LF.layer);
+  });
+  const g = TRACKS.group;
+  const me = gps.last && gps.id !== null ? [gps.last[0], gps.last[1], gps.last[2], gps.last[3]] : (g.length ? g[g.length-1] : null);
+  if (me) {
+    if (me[3]) L.circle([me[1], me[2]], { radius: me[3], color: '#3b6fb6', weight: 1, fillOpacity: .08 }).addTo(LF.layer);
+    L.circleMarker([me[1], me[2]], { radius: 7, color: '#fff', weight: 2, fillColor: '#3b6fb6', fillOpacity: 1 }).bindTooltip('Ryhmä nyt').addTo(LF.layer);
+  }
+  fitMap(false);
+}
+function drawMap(){
+  if (window.L && LF.map) { drawLeaflet(); return; }
+  loadLeaflet().then(L => {
+    $('#lmap').classList.remove('hidden'); $('#mapCanvas').classList.add('hidden'); $('#mapMsg').textContent = '';
+    initLeaflet(L); drawLeaflet();
+  }).catch(() => {
+    $('#lmap').classList.add('hidden'); $('#mapCanvas').classList.remove('hidden');
+    $('#mapMsg').textContent = 'Karttapohja ei latautunut (ei verkkoa) – reitit näytetään ilman karttaa.';
+    drawCanvas();
+  });
+}
+function drawCanvas(){
+  const cv = $('#mapCanvas'); if (!cv) return;
+  const W = cv.clientWidth || 320, dpr = window.devicePixelRatio || 1;
+  cv.width = W * dpr; cv.height = W * dpr;
+  const c = cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,W,W);
+  const evp = cur.events.filter(e => e.pos).map(e => [e.t, e.pos[0], e.pos[1], e.type]);
+  const all = [...TRACKS.group, ...TRACKS.dog, ...evp];
+  const css = getComputedStyle(document.documentElement);
+  c.fillStyle = css.getPropertyValue('--muted'); c.font = '13px system-ui';
+  if (!all.length) { c.fillText('Ei sijaintitietoja vielä', 12, 24); return; }
+  let la0 = Infinity, la1 = -Infinity, lo0 = Infinity, lo1 = -Infinity;
+  all.forEach(p => { la0 = Math.min(la0,p[1]); la1 = Math.max(la1,p[1]); lo0 = Math.min(lo0,p[2]); lo1 = Math.max(lo1,p[2]); });
+  const kx = Math.cos((la0+la1)/2*Math.PI/180), pad = 18;
+  const spanM = Math.max((la1-la0)*111320, (lo1-lo0)*111320*kx, 200);
+  const sc = (W - 2*pad) / spanM, cx = (lo0+lo1)/2, cy = (la0+la1)/2;
+  const X = p => W/2 + (p[2]-cx)*111320*kx*sc, Y = p => W/2 - (p[1]-cy)*111320*sc;
+  const line = (tr, col, w) => { if (tr.length < 2) return; c.strokeStyle = col; c.lineWidth = w; c.lineJoin = 'round'; c.beginPath(); tr.forEach((p,i) => i ? c.lineTo(X(p),Y(p)) : c.moveTo(X(p),Y(p))); c.stroke(); };
+  line(TRACKS.group, '#3b6fb6', 2.5); line(TRACKS.dog, '#d9822b', 1.8);
+  const dot = (p, col, r) => { c.fillStyle = col; c.beginPath(); c.arc(X(p), Y(p), r, 0, 7); c.fill(); c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.stroke(); };
+  evp.forEach(p => dot(p, EV_COLORS[p[3]], 4));
+  if (TRACKS.dog.length) cur.events.filter(e => e.type === 'loyto' || e.type === 'karkko').forEach(e => { const p = window.GEO.at(TRACKS.dog, e.t); if (p) dot(p, EV_COLORS[e.type], 6); });
+  const g = TRACKS.group; if (g.length) dot(g[g.length-1], '#3b6fb6', 6);
+  // mittakaava
+  const nice = [50,100,200,500,1000,2000,5000,10000].find(v => v*sc > W/5) || 10000;
+  c.strokeStyle = css.getPropertyValue('--ink'); c.lineWidth = 2; c.beginPath(); c.moveTo(pad, W-pad); c.lineTo(pad + nice*sc, W-pad); c.stroke();
+  c.fillStyle = css.getPropertyValue('--ink'); c.fillText(nice >= 1000 ? (nice/1000)+' km' : nice+' m', pad, W-pad-6);
+}
+function downloadFile(name, data, type, label){
+  if (window.self !== window.top) return showText(label + ' (kopioi talteen)', data);
+  try {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([data], {type}));
+    a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  } catch(e){ showText(label, data); }
+}
+
+/* ---------- käynnistys ---------- */
+reload();
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  try { navigator.serviceWorker.register('sw.js').catch(()=>{}); } catch(e){}
+}
+})();
+</script>
+</body>
+</html>
