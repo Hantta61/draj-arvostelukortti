@@ -60,7 +60,11 @@ textarea{min-height:80px;resize:vertical}
 .btn.ghost{background:none}
 .btn.danger{color:var(--rust)}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.pts{display:grid;grid-template-columns:repeat(11,1fr);gap:3px;margin-top:10px}
+.pts{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin-top:10px}
+.aux{display:grid;grid-template-columns:1fr;gap:4px;align-items:center;margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
+.aux label{margin:0;font-size:13px;color:var(--ink)}
+.aux select{padding:7px 8px;font-size:15px;margin-bottom:6px}
+.aux .ah{grid-column:1/-1;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 .pts button{font-size:12px!important;padding:9px 0!important}
 .pts .jl{grid-column:1/-1;font-size:12px;color:var(--muted);margin-bottom:-2px}
 .pts button{font:inherit;font-size:14px;padding:9px 0;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-variant-numeric:tabular-nums}
@@ -231,7 +235,7 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 
   <!-- ARVOSTELU -->
   <section id="tab-score" class="hidden">
-    <p class="muted" style="margin-top:0">Ajoajan pisteet lasketaan ajanotosta (65 × ajoaika / 180). Ominaisuudet ovat tuomarien arvioita 0–5 p puolen pisteen tarkkuudella; tulokseen tulee tuomarien ja erien keskiarvo.</p>
+    <p class="muted" style="margin-top:0">Ajoajan pisteet lasketaan ajanotosta (65 × ajoaika / 180). Ominaisuudet ovat tuomarien arvioita 0–5 p puolen pisteen tarkkuudella (– jos ei voida arvioida); tulokseen tulee tuomarien ja erien keskiarvo. Arvosteluperusteet palkintotuomarin ohjeen mukaan (s. 30–40).</p>
     <div id="cats"></div>
   </section>
 
@@ -345,7 +349,7 @@ function finalPts(){
   const out = {};
   H.CATS.forEach(c => {
     const nums = cells(c.id).filter(x => typeof x === 'number');
-    out[c.id] = nums.length ? +(nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2) : null;
+    out[c.id] = nums.length ? +(nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2) : (cells(c.id).some(x => x === '-') ? '-' : null);
   });
   return out;
 }
@@ -360,6 +364,10 @@ function totals(){
   const missing = H.CATS.filter(c => fp[c.id] === null);
   const warns = [];
   if (zeros.length) warns.push('0 pistettä kohdassa ' + zeros.map(c => c.id + '. ' + c.name).join(', ') + ' → koira suljetaan kokeesta');
+  const ax = cur.s.aux || {};
+  if (ax.intoHaku === '0' || ax.intoAjo === '0') warns.push('Metsästysinto 0 (' + [ax.intoHaku === '0' ? 'haku' : '', ax.intoAjo === '0' ? 'ajo' : ''].filter(Boolean).join(', ') + ') → koira suljetaan kokeesta');
+  if (ax.aaniYo === '0') warns.push('Äänenanto yöjäljellä 0: herättely muistuttaa ajoa – haku ja ajo eivät erotu (0 p kohdassa 2 → sulkeminen)');
+  if (TL.erat.length && TL.ajoMin < 20 && cells(4).some(x => typeof x === 'number')) warns.push('Haukkua voi arvostella vain, jos ajoa on kuultu 20 min ilman paikanninta – ajoaikaa on ' + TL.ajoMin + ' min');
   if (TL.hakuaika >= 240) warns.push('Hakuaika 240 min käytetty');
   return { fp, ajoMin: am, ap, omin: +omin.toFixed(2), raw: sum, total, prize: zero ? 0 : H.prize(total, cur.info.rotuRyhma || 'dreeveri'), missing, zero, warns };
 }
@@ -493,18 +501,31 @@ setInterval(() => { if (document.visibilityState === 'visible' && cur.events.len
 /* ---------- ARVOSTELU ---------- */
 const ph = v => `placeholder="${v ?? ''}"`;
 const CRIT = {
-  haku: 'Haun laajuus, järjestelmällisyys ja itsenäisyys ennen yöjäljen löytämistä.',
-  ylos: 'Yöjäljen selvittäminen, eteneminen kohti ajettavaa ja äänenanto jäljellä ylösottoon asti.',
-  ajov: 'Ajon varmuus ja hukkien selvittäminen: miten koira pysyy jäljellä ja selvittää hukat.',
-  hauk: 'Haukun kuuluvuus: kuinka hyvin ajon kulkua voi seurata haukun perusteella.',
-  vaiht: 'Haukun vaihtelevuus ja kertovuus: kertooko haukku ajon tilanteista (jäljen tuoreus, hukka, ajettavan näkeminen).',
-  yht: 'Yhteistyö ohjaajan kanssa ja tottelevaisuus, kytkettävyys.',
-  koko: 'Kokonaisvaikutelma koiran työskentelystä koko kokeen ajalta.'
+  haku: `<b>Plussaa:</b> tehokas, laaja, järjestelmällinen haku ja hyvä yhteydenpito. <b>Miinusta:</b> tehoton, lähihakuinen, epämääräinen tai liian itsenäinen haku. Normaali haun laajuus on noin 100–400 m; liian suppea ja liian laaja haku ovat virheitä. <b>0 p:</b> koira kieltäytyy hakemasta → suljetaan.`,
+  ylos: `<b>Plussaa:</b> määrätietoinen ja rengastava työskentely, jälkitarkka eteneminen, ylösottoon johtava herättely. <b>Miinusta:</b> puurtaminen yöjäljellä ja hakulöysyys. <b>0 p:</b> ääntä niin paljon, ettei haku ja ajo erotu toisistaan, tai koira toistuvasti kieltäytyy seuraamasta yöjälkeä.`,
+  ajov: `<b>Plussaa:</b> rauhallinen ajotapa, yhtenäinen ajo, sitkeä ja uurastava hukkatyöskentely, järkevä rengastus, hyvä tiehukkatyöskentely. <b>Miinusta:</b> liian kiihkeä ajotapa, katkonainen ajo, epämääräinen hukkatyöskentely, hukkien jättäminen selvittämättä. Tarmokkaasti ja järkevästi selvitetty hukka ei alenna; vaikeissa oloissa hoidettu hukka voi nostaa, ratkaisematon hukka alentaa. <b>0 p:</b> jättää toistuvasti hukkatyöskentelyn eikä palaa hukalle.`,
+  hauk: `<b>Plussaa:</b> kuuluva, sointuva haukku; kaksi- tai moniäänisyys on lisäansio. <b>Miinusta:</b> heikosti kuuluva tai laadultaan huono haukku. Kuuluvuus on ratkaiseva; maasto, keli, tuuli, sumu, lumi ja liikennemelu huomioidaan. Dreeverin haukkua voi arvostella vain, jos ajoa on kuultu 20 min ilman paikanninta. <b>0 p:</b> ajoa ei voi seurata lyhyeltäkään etäisyydeltä tavallisissa oloissa.`,
+  vaiht: `<b>Plussaa:</b> rauhallinen, tapahtumia kertova, moniääninen ja tiheä haukku. <b>Miinusta:</b> löysyys, tiukkuus, liiallinen kiihkeys, kertomattomuus, harva haukku. Löysä koira (pysyy hukkapaikalla, kertaa ajettua jälkeä, ajaa vanhoja jälkiä) ja tiukka koira (liian niukka haukku hyvässä yhteydessä ajettavaan) saavat vähän pisteitä. <b>0 p:</b> niin löysä tai tiukka, ettei ajoa voi seurata.`,
+  yht: `<b>Plussaa:</b> ohjattavuus, kutsuun vastaaminen ja tuleminen. <b>Miinusta:</b> liiallinen itsenäisyys ja kiinniannamattomuus. Koiran tulee ottaa yhteyttä sopivin välein, kun se ei ole jäljellä, ja palata kutsusta hukalta tai ajon päätyttyä; paluu kutsusta jäljiltä tai ajosta on lisäansio. Ilmeinen tottelemattomuus arvostellaan ankarasti.`,
+  koko: `<b>Plussaa:</b> hyvä metsästysinto, rakenteellinen kestävyys, hyvä luonne. <b>Miinusta:</b> puutteellinen metsästysinto, rakenteellinen heikkous, luonteen heikkoudet. Tuomarin on voitava tarkistaa tassut ja tunnistusmerkintä vaikeuksitta. <b>0 p:</b> rakenne ei kestä koepäivää, koira puree tuomaria, on niin arka ettei sitä saa kytketyksi, tai metsästysinto haussa tai ajossa on 0.`
 };
+const SCALE_TXT = '5 kiitettävä · 4 hyvä · 3 tyydyttävä · 2 välttävä · 1 heikko · 0 hylättävä (→ sulkeminen) · – ei voida arvioida';
+// apusarakkeet (ohjaavat arviota, eivät vaikuta loppupisteisiin)
+const AUX = {
+  haku: [['laajuus','Haun laajuus', [['1','1 · alle 100 m'],['2','2 · 100–200 m'],['3','3 · 200–300 m'],['4','4 · 300–400 m'],['5','5 · yli 400 m']]],
+         ['intoHaku','Metsästysinto haussa', [['5','5 · kiitettävä'],['4','4 · hyvä'],['3','3 · normaali'],['2','2 · tyydyttävä'],['1','1 · puutteellinen'],['0','0 · ei intoa (sulkeminen)']]]],
+  ylos: [['aaniYo','Äänenanto yöjäljellä', [['5','5 · yksittäisiä herättelyhaukahduksia'],['4','4 · ei herättelyhaukkua'],['3','3 · kohtuullisesti herättelyä'],['2','2 · runsaasti herättelyä'],['1','1 · hyvin runsaasti herättelyä'],['0','0 · herättely muistuttaa ajoa']]]],
+  vaiht: [['aaniHukka','Äänenanto hukalla', [['5','5 · ei herättelyä eikä takajälkiajoa'],['4','4 · yksittäisiä herättelyhaukahduksia'],['3','3 · kohtuullista herättelyä / lyhyitä takajälkiajoja'],['2','2 · runsasta herättelyä / usein takajälkiajoja'],['1','1 · hyvin runsasta herättelyä / pitkiä takajälkiajoja'],['0','0 · herättely muistuttaa ajoa']]]],
+  koko: [['intoAjo','Metsästysinto ajossa', [['5','5 · kiitettävä'],['4','4 · hyvä'],['3','3 · normaali'],['2','2 · tyydyttävä'],['1','1 · puutteellinen'],['0','0 · ei intoa (sulkeminen)']]]]
+};
+function auxBlock(c){
+  const a = AUX[c.key]; if (!a) return '';
+  return `<div class="aux"><span class="ah">Apusarake – ei lasketa pisteisiin</span>${a.map(([k,l,opts]) => `<label>${l}</label><select data-f="s.aux.${k}"><option value="">–</option>${opts.map(([v,t]) => `<option value="${v}">${t}</option>`).join('')}</select>`).join('')}</div>`;
+}
 function ptsRow(c, e, j){
   const lbl = (nErat() > 1 ? `Erä ${e+1}` : '') + (nErat() > 1 && nJudges() > 1 ? ' · ' : '') + (nJudges() > 1 ? `T${j+1}` : '');
   return `<div class="pts" data-pts="${c.id}" data-k="e${e}j${j}">${lbl ? `<span class="jl">${lbl}</span>` : ''}
-    ${PTS.map(v => `<button data-v="${v}">${String(v).replace('.', ',')}</button>`).join('')}</div>`;
+    <button data-v="-">–</button>${PTS.map(v => `<button data-v="${v}">${String(v).replace('.', ',')}</button>`).join('')}</div>`;
 }
 function renderScore(){
   const er = TL.erat;
@@ -533,14 +554,15 @@ function renderScore(){
       <h2>${c.id}. ${c.name}<span class="w" data-w="${c.id}"></span></h2>
       ${Array.from({length:nErat()},(_,e)=>Array.from({length:nJudges()},(_,j)=>ptsRow(c,e,j)).join('')).join('')}
       <div class="sugg-line" data-sl="${c.id}"></div>
-      <details><summary>Arvosteluperusteet</summary><p>${CRIT[c.key]} 0 p tästä kohdasta johtaa sulkemiseen.</p></details>
+      ${auxBlock(c)}
+      <details><summary>Arvosteluperusteet</summary><p>${CRIT[c.key]}</p><p class="muted">${SCALE_TXT}</p></details>
     </div>`).join('');
   bindFields($('#cats'));
   if (!cur.judges) $('[data-f=judges]').value = '1';
   if (!cur.s.era1) $('[data-f="s.era1"]').value = '120';
   $$('.pts').forEach(row => row.onclick = ev => {
     const b = ev.target.closest('button'); if (!b) return;
-    const id = +row.dataset.pts, k = row.dataset.k, v = +b.dataset.v;
+    const id = +row.dataset.pts, k = row.dataset.k, v = b.dataset.v === '-' ? '-' : +b.dataset.v;
     const o = (cur.pts[id] && typeof cur.pts[id] === 'object' && !Array.isArray(cur.pts[id])) ? cur.pts[id] : {};
     o[k] = o[k] === v ? null : v; cur.pts[id] = o; save(); refresh();
   });
@@ -551,13 +573,14 @@ function refreshScore(t){
     const o = (cur.pts[c.id] && typeof cur.pts[c.id] === 'object' && !Array.isArray(cur.pts[c.id])) ? cur.pts[c.id] : {};
     $$(`[data-pts="${c.id}"]`).forEach(row => {
       const v0 = o[row.dataset.k];
-      $$('button', row).forEach(b => b.classList.toggle('on', v0 !== undefined && v0 !== null && +b.dataset.v === v0));
+      $$('button', row).forEach(b => b.classList.toggle('on', v0 !== undefined && v0 !== null && (b.dataset.v === '-' ? v0 === '-' : +b.dataset.v === v0)));
     });
     const fp = t.fp[c.id], n = cells(c.id).length;
-    let html = fp === null ? 'Valitse pisteet' : (n > 1 ? `keskiarvo <b>${fmt2(fp)}</b> (${n} arviota)` : '');
+    let html = fp === null ? 'Valitse pisteet' : fp === '-' ? 'Ei voida arvioida (–)' : (n > 1 ? `keskiarvo <b>${fmt2(fp)}</b> (${n} arviota)` : '');
+    if (c.key === 'hauk' && TL.erat.length && TL.ajoMin < 20) html += `<div class="warn">Ajoa ${TL.ajoMin} min – haukkua voi arvostella vasta, kun ajoa on kuultu 20 min (muuten –).</div>`;
     if (cells(c.id).some(x => x === 0)) html += '<div class="warn">0 p → koira suljetaan kokeesta.</div>';
     $(`[data-sl="${c.id}"]`).innerHTML = html;
-    $(`[data-w="${c.id}"]`).textContent = fp === null ? '' : fmt2(fp) + ' p';
+    $(`[data-w="${c.id}"]`).textContent = fp === null ? '' : fp === '-' ? '–' : fmt2(fp) + ' p';
   });
   const w = $('#ajoW');
   if (w) {
@@ -581,7 +604,7 @@ function renderResult(){
   $('#resNote').innerHTML = notes.map(esc).join('<br>') + t.warns.map(w => `<div class="warn">⚠ ${esc(w)}</div>`).join('');
   $('#resTable').innerHTML = `<tr><th>Arvosteluperuste</th><th class="n">p</th></tr>` +
     `<tr><td>Ajoaika ${t.ajoMin} min</td><td class="n">${fmt2(t.ap)}</td></tr>` +
-    H.CATS.map(c => { const p = t.fp[c.id]; return `<tr><td>${c.id}. ${c.name}</td><td class="n">${p===null?'':fmt2(p)}</td></tr>`; }).join('') +
+    H.CATS.map(c => { const p = t.fp[c.id]; return `<tr><td>${c.id}. ${c.name}</td><td class="n">${p===null?'':p==='-'?'–':fmt2(p)}</td></tr>`; }).join('') +
     `<tr><td>Ominaisuuspisteet yhteensä</td><td class="n">${fmt2(t.omin)}</td></tr>` +
     `<tr><th>Loppupisteet</th><th class="n">${fmt2(t.total)}</th></tr>`;
   $('#tieInfo').innerHTML = `Hakuaika <b>${TL.hakuaika} min</b> · Ajoaika <b>${t.ajoMin} min</b> · Hukat ${TL.hukkaCount} (vähennetty ${TL.hukatMin} min)` +
@@ -599,7 +622,9 @@ function summaryText(t){
   if (i.riista) L.push(`Ajettava: ${i.riista}`);
   L.push('');
   L.push(`Ajoaika ${t.ajoMin} min`.padEnd(52) + fmt2(t.ap));
-  H.CATS.forEach(c => { const p = t.fp[c.id]; L.push(`${c.id}. ${c.name}`.padEnd(52) + (p===null?'':fmt2(p))); });
+  H.CATS.forEach(c => { const p = t.fp[c.id]; L.push(`${c.id}. ${c.name}`.padEnd(52) + (p===null?'':p==='-'?'–':fmt2(p))); });
+  const ax = cur.s.aux || {}, axl = [['laajuus','Haun laajuus'],['intoHaku','Metsästysinto haku'],['intoAjo','Metsästysinto ajo'],['aaniYo','Äänenanto yöjäljellä'],['aaniHukka','Äänenanto hukalla']].filter(([k]) => ax[k] !== undefined && ax[k] !== '').map(([k,l]) => `${l} ${ax[k]}`);
+  if (axl.length) L.push('Apusarakkeet: ' + axl.join(' · '));
   L.push('');
   L.push(`Hakuaika ${TL.hakuaika} min · Hukat ${TL.hukkaCount} (vähennetty ${TL.hukatMin} min)`);
   TL.erat.forEach(a => L.push(`Erä ${a.n}: ${hhmm(a.start)}–${hhmm(a.end)} (${a.len} min) ajoa ${a.ajo} min`));

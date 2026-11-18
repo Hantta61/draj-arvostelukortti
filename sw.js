@@ -1,5 +1,5 @@
 /* DRAJ arvostelukortti – © 2026 ICT- ja karttapalvelut Peltonen. Kaikki oikeudet pidätetään. */
-const CACHE = 'draj-v1';
+const CACHE = 'draj-v2';
 const EXT = 'draj-ext-v1';     // Leaflet-kirjasto ja karttatiilet
 const MAX_TILES = 4000;
 const FILES = ['./', './index.html', './draj.js', './geo.js', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
